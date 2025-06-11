@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>X Feed Viewer Settings</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>X Feed Viewer Settings</h1>
+        
+        <div class="section">
+            <h3>API Configuration</h3>
+            <label for="apiTimeout">Request Timeout (ms):</label>
+            <input type="number" id="apiTimeout" value="10000" min="5000" max="30000">
+            
+            <label for="maxRetries">Max Retries:</label>
+            <input type="number" id="maxRetries" value="3" min="1" max="10">
+            
+            <label for="fallbackEnabled">Enable API Fallback:</label>
+            <input type="checkbox" id="fallbackEnabled" checked>
+        </div>
+
+        <div class="section">
+            <h3>Display Options</h3>
+            <label for="tweetsPerLoad">Tweets per Load:</label>
+            <input type="number" id="tweetsPerLoad" value="20" min="10" max="50">
+            
+            <label for="autoRefresh">Auto Refresh (minutes):</label>
+            <input type="number" id="autoRefresh" value="0" min="0" max="60">
+            <small>Set to 0 to disable auto refresh</small>
+        </div>
+
+        <div class="section">
+            <button id="saveSettings">Save Settings</button>
+            <button id="resetSettings">Reset to Defaults</button>
+        </div>
+
+        <div id="settingsStatus" class="status"></div>
+    </div>
+    <script src="options.js"></script>
+</body>
+</html>

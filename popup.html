@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Feed Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>X Feed Viewer</h2>
+            <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+        </div>
+        
+        <div class="section">
+            <h3>Add New Account</h3>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Username (e.g., @johndoe)" />
+                <input type="password" id="auth_token" placeholder="Auth Token" />
+                <input type="password" id="ct0" placeholder="CT0 Token" />
+                <input type="password" id="bearer" placeholder="Bearer Token" />
+                <button id="saveTokens" class="primary-btn">Save Account</button>
+            </div>
+            <div class="help-text">
+                <small>Need help finding tokens? <a href="#" id="helpLink">Click here</a></small>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>View Feed</h3>
+            <div class="feed-controls">
+                <select id="accountSelect">
+                    <option value="">Select Account</option>
+                </select>
+                <div class="button-group">
+                    <button id="loadFeed" class="primary-btn">Load Feed</button>
+                    <button id="refreshFeed" class="secondary-btn">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Manage Accounts</h3>
+            <div class="button-group">
+                <button id="clearAll" class="danger-btn">Clear All</button>
+                <button id="exportTokens" class="secondary-btn">Export</button>
+                <button id="importBtn" class="secondary-btn">Import</button>
+                <input type="file" id="importTokens" accept=".json" style="display: none;">
+            </div>
+        </div>
+
+        <div id="status" class="status" aria-live="polite"></div>
+        
+        <div class="feed-section">
+            <div id="feedHeader" class="feed-header" style="display: none;">
+                <h3>Timeline</h3>
+                <div class="feed-info">
+                    <span id="feedUser"></span>
+                    <span id="feedCount"></span>
+                </div>
+            </div>
+            <div id="feed" class="feed-container"></div>
+        </div>
+
+        <div id="helpModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>How to Get Tokens</h3>
+                <ol>
+                    <li>Go to <a href="https://x.com" target="_blank">x.com</a> and log in</li>
+                    <li>Open Developer Tools (F12)</li>
+                    <li>Go to Application/Storage → Cookies</li>
+                    <li>Find and copy:
+                        <ul>
+                            <li><strong>auth_token</strong> cookie value</li>
+                            <li><strong>ct0</strong> cookie value</li>
+                        </ul>
+                    </li>
+                    <li>Go to Network tab, refresh page</li>
+                    <li>Find any API request and copy the <strong>Authorization</strong> header (Bearer token)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
