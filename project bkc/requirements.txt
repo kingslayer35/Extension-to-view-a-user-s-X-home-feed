@@ -1,0 +1,5 @@
+Flask
+Flask-Cors
+twikit
+tenacity
+2captcha-python  # <-- Add this for solving CAPTCHAs
