@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twikit import Client
 from twikit.errors import Unauthorized
+import asyncio # Import asyncio
 
 # --- Configuration ---
 app = Flask(__name__)
@@ -27,25 +28,26 @@ def add_account():
         return jsonify({"error": "Missing required fields.", "details": "All fields are required."}), 400
 
     try:
-        client = Client('en-US')
-        client.login(
-            auth_info_1=username,
-            auth_info_2=email,
-            password=password
-        )
+        # Use asyncio.run to execute the async login method
+        async def login_and_get_cookies():
+            client = Client('en-US')
+            await client.login( # Await the login
+                auth_info_1=username,
+                auth_info_2=email,
+                password=password
+            )
+            return client.get_cookies()
+
+        cookies = asyncio.run(login_and_get_cookies())
 
         # --- CRITICAL FIX 1: Verify that login was successful ---
-        # After login, get the cookies and check if they are valid.
-        cookies = client.get_cookies()
         if not cookies or 'auth_token' not in cookies:
-            # If cookies are empty or auth_token is missing, the login failed silently.
             return jsonify({
                 "error": "Login Failed Silently",
                 "details": "X.com likely presented a security challenge (like a CAPTCHA) that could not be handled. The login did not complete successfully."
             }), 500
         # ---------------------------------------------------------
 
-        # If we get here, login was successful. Save the valid cookies.
         session_file = SESSION_DIR / f"{account_name}.json"
         with open(session_file, 'w') as f:
             json.dump(cookies, f)
@@ -73,20 +75,20 @@ def get_feed():
         with open(session_file, 'r') as f:
             cookies = json.load(f)
         
-        # Check if the loaded cookie file is empty
         if not cookies:
              return jsonify({
                 "error": "Invalid Session File",
                 "details": "The saved session file is empty. Please add the account again to create a valid session."
             }), 400
+        
+        # Use asyncio.run to execute the async get_home_timeline method
+        async def get_timeline_async(loaded_cookies):
+            client = Client('en-US')
+            client.set_cookies(loaded_cookies)
+            # --- CRITICAL FIX 2: Use the correct method name ---
+            return await client.get_home_timeline(count=40) # Await the timeline call
 
-        client = Client('en-US')
-        client.set_cookies(cookies)
-
-        # --- CRITICAL FIX 2: Use the correct method name ---
-        # The correct method is 'get_home_timeline()'.
-        timeline = client.get_home_timeline(count=40)
-        # -----------------------------------------------------
+        timeline = asyncio.run(get_timeline_async(cookies))
 
         formatted_tweets = []
         for tweet in timeline:
