@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twikit import Client
 from twikit.errors import Unauthorized
-import asyncio # Import asyncio
+import asyncio
 
 # --- Configuration ---
 app = Flask(__name__)
@@ -20,40 +20,68 @@ SESSION_DIR = Path("sessions")
 def add_account():
     data = request.get_json()
     account_name = data.get('account_name')
+    
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
 
-    if not all([account_name, username, password, email]):
-        return jsonify({"error": "Missing required fields.", "details": "All fields are required."}), 400
+    input_cookies = data.get('cookies') # This will be a dictionary from frontend
+
+    if not account_name:
+        return jsonify({"error": "Missing required field.", "details": "Account Name is required."}), 400
 
     try:
-        # Use asyncio.run to execute the async login method
-        async def login_and_get_cookies():
-            client = Client('en-US')
-            await client.login( # Await the login
-                auth_info_1=username,
-                auth_info_2=email,
-                password=password
-            )
-            return client.get_cookies()
+        client = Client('en-US')
+        
+        if input_cookies:
+            async def set_cookies_and_verify():
+                client.set_cookies(input_cookies)
+                try:
+                    await client.get_home_timeline(count=1)
+                    return input_cookies
+                except Unauthorized:
+                    raise Unauthorized("Provided cookies are invalid or expired.")
+                except Exception as e:
+                    raise Exception(f"Failed to verify cookies: {str(e)}")
 
-        cookies = asyncio.run(login_and_get_cookies())
+            cookies_to_save = asyncio.run(set_cookies_and_verify())
+            message = f"Successfully saved session for '{account_name}' using provided cookies."
 
-        # --- CRITICAL FIX 1: Verify that login was successful ---
-        if not cookies or 'auth_token' not in cookies:
+        elif all([username, password, email]):
+            async def login_and_get_cookies():
+                await client.login(
+                    auth_info_1=username,
+                    auth_info_2=email,
+                    password=password
+                )
+                return client.get_cookies()
+
+            cookies_to_save = asyncio.run(login_and_get_cookies())
+            
+            if not cookies_to_save or 'auth_token' not in cookies_to_save:
+                return jsonify({
+                    "error": "Login Failed Silently",
+                    "details": "X.com likely presented a security challenge (like a CAPTCHA) that could not be handled. The login did not complete successfully."
+                }), 500
+            message = f"Successfully logged in and saved session for '{account_name}' using username/password."
+
+        else:
             return jsonify({
-                "error": "Login Failed Silently",
-                "details": "X.com likely presented a security challenge (like a CAPTCHA) that could not be handled. The login did not complete successfully."
-            }), 500
-        # ---------------------------------------------------------
+                "error": "Missing login credentials",
+                "details": "Please provide either username/email/password OR auth_token/ct0 (and ideally others) for login."
+            }), 400
 
         session_file = SESSION_DIR / f"{account_name}.json"
         with open(session_file, 'w') as f:
-            json.dump(cookies, f)
+            json.dump(cookies_to_save, f)
 
-        return jsonify({"message": f"Successfully logged in and saved session for '{account_name}'."}), 200
+        return jsonify({"message": message}), 200
 
+    except Unauthorized as ue:
+        return jsonify({
+            "error": "Authorization Failed",
+            "details": str(ue) + ". Please ensure cookies are correct or credentials are valid."
+        }), 401
     except Exception as e:
         return jsonify({"error": "An unexpected server error occurred during login.", "details": str(e)}), 500
 
@@ -81,12 +109,10 @@ def get_feed():
                 "details": "The saved session file is empty. Please add the account again to create a valid session."
             }), 400
         
-        # Use asyncio.run to execute the async get_home_timeline method
         async def get_timeline_async(loaded_cookies):
             client = Client('en-US')
             client.set_cookies(loaded_cookies)
-            # --- CRITICAL FIX 2: Use the correct method name ---
-            return await client.get_home_timeline(count=40) # Await the timeline call
+            return await client.get_home_timeline(count=40)
 
         timeline = asyncio.run(get_timeline_async(cookies))
 
@@ -106,7 +132,7 @@ def get_feed():
     except Unauthorized:
         return jsonify({
             "error": "Session Expired",
-            "details": "The saved session is no longer valid. Please add the account again to refresh it."
+            "details": "The saved session is no longer valid. Please add the account again to refresh it (either by logging in or providing fresh cookies)."
         }), 401
         
     except Exception as e:

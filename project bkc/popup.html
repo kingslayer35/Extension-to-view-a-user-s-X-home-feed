@@ -15,17 +15,42 @@
         #status { margin-top: 15px; font-size: 14px; padding: 10px; border-radius: 5px; word-wrap: break-word; display: none; }
         .success { display: block; background-color: #e4f8e9; color: #34a853; border: 1px solid #a8d7b3; }
         .error { display: block; background-color: #fce8e6; color: #d93025; border: 1px solid #f2b2ae; }
-        .loading { display: block; background-color: #fffbe6; color: #f29900; border: 1px solid #fde293; }
+        .loading { display: block; background-color: #fffbe6; color:  #f29900; border: 1px solid #fde293; }
         hr { border: 0; border-top: 1px solid #eff3f4; margin: 20px 0; }
+        .cookie-input-group {
+            border: 1px dashed #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .cookie-input-group p {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <h3>Add New Account Session</h3>
     <form id="add-account-form">
         <input type="text" id="account_name" placeholder="Friendly Account Name (e.g., 'Friend')" required />
-        <input type="text" id="username" placeholder="X Username" required />
-        <input type="email" id="email" placeholder="Login Email (required by API)" required />
-        <input type="password" id="password" placeholder="Password" required />
+        <input type="text" id="username" placeholder="X Username" />
+        <input type="email" id="email" placeholder="Login Email (required for username/password login)" />
+        <input type="password" id="password" placeholder="Password" />
+
+        <hr>
+        <div class="cookie-input-group">
+            <p><strong>OR</strong> provide cookies directly (overrides username/password if provided):</p>
+            <input type="text" id="auth_token" placeholder="auth_token (required)" />
+            <input type="text" id="ct0" placeholder="ct0 (required)" />
+            <input type="text" id="twid" placeholder="twid (recommended)" />
+            <input type="text" id="kdt" placeholder="kdt (recommended)" />
+            <input type="text" id="guest_id" placeholder="guest_id (recommended)" />
+            </div>
+        <hr>
+
         <button type="submit">Log In & Save Session</button>
     </form>
     

@@ -69,20 +69,51 @@ document.getElementById('add-account-form').addEventListener('submit', async (ev
     event.preventDefault();
     updateStatus('Processing...', 'loading');
 
-    const formData = {
-        account_name: document.getElementById('account_name').value,
-        username: document.getElementById('username').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-    };
+    const account_name = document.getElementById('account_name').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    // Get cookie values
+    const auth_token = document.getElementById('auth_token').value.trim();
+    const ct0 = document.getElementById('ct0').value.trim();
+    const twid = document.getElementById('twid').value.trim();       // NEW
+    const kdt = document.getElementById('kdt').value.trim();         // NEW
+    const guest_id = document.getElementById('guest_id').value.trim(); // NEW
+    // Add more cookie variables here as you add inputs
 
-    if (!formData.account_name.trim() || !formData.username.trim() || !formData.password.trim() || !formData.email.trim()) {
-        updateStatus('<b>Input Error:</b> All fields are required.', 'error');
+    if (!account_name) {
+        updateStatus('<b>Input Error:</b> Account Name is required.', 'error');
         return;
     }
 
-    updateStatus('Logging in and saving session... This may take a moment.', 'loading');
+    let formData = { account_name: account_name };
+    let usingCookies = false;
 
+    // Prioritize cookies if primary ones are provided
+    if (auth_token && ct0) {
+        formData.cookies = {
+            'auth_token': auth_token,
+            'ct0': ct0,
+        };
+        if (twid) formData.cookies['twid'] = twid;
+        if (kdt) formData.cookies['kdt'] = kdt;
+        if (guest_id) formData.cookies['guest_id'] = guest_id;
+        // Add conditions for other new cookies:
+        // if (__cf_bm) formData.cookies['__cf_bm'] = __cf_bm; 
+
+        usingCookies = true;
+        updateStatus('Using provided cookies to save session...', 'loading');
+    } else if (username && email && password) {
+        formData.username = username;
+        formData.email = email;
+        formData.password = password;
+        updateStatus('Using username/password to save session...', 'loading');
+    } else {
+        updateStatus('<b>Input Error:</b> Please provide either username/email/password OR auth_token/ct0 (and ideally others).', 'error');
+        return;
+    }
+    
     try {
         const response = await fetch('http://127.0.0.1:5000/add_account', {
             method: 'POST',
