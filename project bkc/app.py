@@ -25,7 +25,7 @@ def add_account():
     password = data.get('password')
     email = data.get('email')
 
-    input_cookies = data.get('cookies') # This will be a dictionary from frontend
+    input_cookies = data.get('cookies')
 
     if not account_name:
         return jsonify({"error": "Missing required field.", "details": "Account Name is required."}), 400
@@ -37,7 +37,7 @@ def add_account():
             async def set_cookies_and_verify():
                 client.set_cookies(input_cookies)
                 try:
-                    await client.get_home_timeline(count=1)
+                    await client.get_timeline(count=1) 
                     return input_cookies
                 except Unauthorized:
                     raise Unauthorized("Provided cookies are invalid or expired.")
@@ -112,19 +112,30 @@ def get_feed():
         async def get_timeline_async(loaded_cookies):
             client = Client('en-US')
             client.set_cookies(loaded_cookies)
-            return await client.get_home_timeline(count=40)
+            return await client.get_timeline(count=40)
 
         timeline = asyncio.run(get_timeline_async(cookies))
 
         formatted_tweets = []
         for tweet in timeline:
+            media_urls = [media.media_url_https for media in tweet.media if hasattr(media, 'media_url_https')]
+            
             formatted_tweets.append({
+                "id": tweet.id,
                 "text": tweet.text,
+                "created_at": tweet.created_at,
                 "user": {
                     "name": tweet.user.name,
                     "screen_name": tweet.user.screen_name,
-                    "profile_image_url_https": tweet.user.profile_image_url_https
-                }
+                    "profile_image_url_https": tweet.user.profile_image_url
+                },
+                "stats": {
+                    "likes": tweet.favorite_count,
+                    "retweets": tweet.retweet_count,
+                    # CORRECTED: Changed the attribute to match the twikit Tweet object
+                    "views": tweet.view_count
+                },
+                "media_urls": media_urls
             })
         
         return jsonify(formatted_tweets)
