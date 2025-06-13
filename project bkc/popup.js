@@ -60,7 +60,7 @@ async function loadFeedFor(accountName) {
 function updateStatus(message, type) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerHTML = message;
-    statusDiv.className = `status ${type}`; // Ensure 'status' class is always present
+    statusDiv.className = `status ${type}`;
     statusDiv.style.display = 'block';
 }
 
@@ -108,33 +108,52 @@ document.getElementById('add-account-form').addEventListener('submit', async (ev
 });
 
 
-// --- Injected Function (No changes needed here) ---
+// --- Injected Function ---
 function displayFeedInPage(tweets, accountName) {
     const timelineContainer = document.querySelector('div[aria-label*="Timeline: Your Home Timeline"]');
     if (!timelineContainer) {
-        alert('Error: Could not find the X.com timeline container. Navigate to your home feed or the site layout may have changed.');
+        alert('Error: Could not find the X.com timeline container. Are you on the home page?');
         return;
     }
     
-    timelineContainer.innerHTML = `<h2 style="padding: 20px; text-align: center; color: #0f1419;">Displaying feed for "${accountName}"</h2>`;
+    let feedHTML = `<h2 style="padding: 1rem; margin:0; text-align: center; color: #e7e9ea;">Displaying Custom Feed for "${accountName}"</h2>`;
     
-    if (tweets.length === 0) {
-        timelineContainer.innerHTML += '<p style="text-align: center;">No tweets found in the timeline, or the API structure has changed.</p>';
+    if (!tweets || tweets.length === 0) {
+        feedHTML += '<p style="text-align: center; padding: 1rem; color: #e7e9ea;">No tweets found in the timeline.</p>';
+        timelineContainer.innerHTML = feedHTML;
         return;
     }
 
     tweets.forEach(tweet => {
-        const tweetElement = document.createElement('article');
-        tweetElement.style.cssText = 'border-bottom: 1px solid rgb(239, 243, 244); padding: 1rem;';
-        
-        tweetElement.innerHTML = `
-            <div style="display: flex; align-items: flex-start;">
-                <img src="${tweet.user.profile_image_url_https}" style="width: 48px; height: 48px; border-radius: 50%;">
-                <div style="margin-left: 12px; color: #0f1419; line-height: 1.4;">
-                    <p style="font-weight: bold; margin: 0;">${tweet.user.name} <span style="font-weight: normal; color: #536471;">@${tweet.user.screen_name}</span></p>
-                    <p style="margin: 5px 0 0 0; white-space: pre-wrap;">${tweet.text}</p>
+        const mediaHTML = tweet.media_urls.length > 0
+            ? `<img src="${tweet.media_urls[0]}" style="width: 100%; max-height: 500px; object-fit: cover; border-radius: 16px; margin-top: 12px; border: 1px solid #38444d;">`
+            : '';
+
+        feedHTML += `
+            <article style="border-bottom: 1px solid #38444d; padding: 1rem; display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: flex-start;">
+                    <img src="${tweet.user.profile_image_url_https}" style="width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;">
+                    <div style="margin-left: 12px; line-height: 1.4; width: 100%;">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                            <span style="font-weight: bold; margin: 0; color: #e7e9ea;">${tweet.user.name}</span>
+                            <span style="font-weight: normal; color: #71767b; margin-left: 5px;">@${tweet.user.screen_name}</span>
+                        </div>
+                        <!-- THIS IS THE FIX: Added an explicit 'color' property to the tweet text container -->
+                        <div style="margin: 5px 0 0 0; white-space: pre-wrap; word-wrap: break-word; color: #e7e9ea; font-size: 15px;">${tweet.text}</div>
+                    </div>
                 </div>
-            </div>`;
-        timelineContainer.appendChild(tweetElement);
+                ${mediaHTML}
+                <div style="display: flex; justify-content: space-between; align-items:center; color: #71767b; margin-top: 12px; font-size: 13px;">
+                    <div>
+                        <span>❤️ ${tweet.stats.likes}</span>
+                        <span style="margin-left: 1rem;">🔁 ${tweet.stats.retweets}</span>
+                        <span style="margin-left: 1rem;">👁️ ${tweet.stats.views}</span>
+                    </div>
+                    <span>${new Date(tweet.created_at).toLocaleString()}</span>
+                </div>
+            </article>
+        `;
     });
+    
+    timelineContainer.innerHTML = feedHTML;
 }
