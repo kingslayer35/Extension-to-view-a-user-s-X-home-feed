@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>X Feed Viewer</title>
+    <link href="output.css" rel="stylesheet">
+</head>
+<!-- KEY CHANGE: Width restored from the incorrect w-88 back to w-96 -->
+<body class="w-96 rounded-2xl bg-x-bg p-4 font-sans text-x-text-primary">
+
+    <h3 class="mb-4 text-lg font-bold">Add New Account</h3>
+    
+    <form id="add-account-form" class="space-y-2">
+        <input class="w-full rounded-lg border border-x-border bg-transparent p-2 placeholder-x-text-secondary focus:border-x-blue focus:ring-1 focus:ring-x-blue" type="text" id="account_name" placeholder="Friendly Account Name" required />
+        <input class="w-full rounded-lg border border-x-border bg-transparent p-2 placeholder-x-text-secondary focus:border-x-blue focus:ring-1 focus:ring-x-blue" type="text" id="username" placeholder="X Username" />
+        <input class="w-full rounded-lg border border-x-border bg-transparent p-2 placeholder-x-text-secondary focus:border-x-blue focus:ring-1 focus:ring-x-blue" type="email" id="email" placeholder="Login Email" />
+        <input class="w-full rounded-lg border border-x-border bg-transparent p-2 placeholder-x-text-secondary focus:border-x-blue focus:ring-1 focus:ring-x-blue" type="password" id="password" placeholder="Password" />
+        <button class="w-full cursor-pointer rounded-full border-none bg-x-blue p-2.5 font-bold text-white transition-colors hover:bg-opacity-90" type="submit">Log In & Save</button>
+        <div id="login-status" class="hidden rounded-md border p-3 text-sm"></div>
+    </form>
+    
+    <hr class="my-6 border-0 border-t border-x-border">
+    
+    <h3 class="mb-4 text-lg font-bold">Load Saved Feed</h3>
+    
+    <div id="saved-accounts-list" class="max-h-48 space-y-2 overflow-y-auto pr-2">
+        <p class="text-x-text-secondary">Loading accounts...</p>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

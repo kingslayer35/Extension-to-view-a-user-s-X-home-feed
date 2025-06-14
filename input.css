@@ -1,0 +1,44 @@
+/*
+  This is the main input file for Tailwind CSS.
+  The @tailwind directives inject Tailwind's core styles.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  --- Custom Scrollbar Styling ---
+  This section adds the custom CSS needed to style the scrollbar
+  for the saved accounts list, matching the X/Twitter aesthetic.
+*/
+
+/* Target the scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+#saved-accounts-list::-webkit-scrollbar {
+  width: 8px; /* Sets the width of the scrollbar */
+}
+
+/* Target the track (the background of the scrollbar) */
+#saved-accounts-list::-webkit-scrollbar-track {
+  background: transparent; /* Makes the track invisible */
+}
+
+/* Target the thumb (the draggable part of the scrollbar) */
+#saved-accounts-list::-webkit-scrollbar-thumb {
+  background-color: #2f3336; /* A subtle dark gray for the thumb */
+  border-radius: 20px;       /* Gives the thumb fully rounded edges */
+  border: 2px solid #000000;  /* Creates a small border to match the background */
+}
+
+/* Style the thumb on hover for a subtle interactive effect */
+#saved-accounts-list::-webkit-scrollbar-thumb:hover {
+  background-color: #424649; /* Slightly lighter gray on hover */
+}
+
+/*
+  Add standard CSS scrollbar properties for Firefox compatibility.
+  This ensures the styling is consistent on other browsers.
+*/
+#saved-accounts-list {
+  scrollbar-width: thin;
+  scrollbar-color: #2f3336 transparent; /* thumb color and track color */
+}

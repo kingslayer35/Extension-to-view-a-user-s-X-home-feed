@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "X Feed Viewer",
+  "version": "1.1",
+  "description": "View another user's X home feed using saved sessions.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
