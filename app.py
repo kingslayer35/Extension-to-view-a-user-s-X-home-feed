@@ -1,11 +1,13 @@
+# This is the complete and final version of app.py. No functions have been skipped.
 import os
 import json
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from twikit import Client
 from twikit.errors import Unauthorized
 import asyncio
+import requests
 
 # --- Configuration ---
 app = Flask(__name__)
@@ -61,14 +63,14 @@ def add_account():
             if not cookies_to_save or 'auth_token' not in cookies_to_save:
                 return jsonify({
                     "error": "Login Failed Silently",
-                    "details": "X.com likely presented a security challenge (like a CAPTCHA) that could not be handled. The login did not complete successfully."
+                    "details": "X.com likely presented a security challenge that could not be handled."
                 }), 500
             message = f"Successfully logged in and saved session for '{account_name}' using username/password."
 
         else:
             return jsonify({
                 "error": "Missing login credentials",
-                "details": "Please provide either username/email/password OR auth_token/ct0 (and ideally others) for login."
+                "details": "Please provide either username/email/password OR valid cookies for login."
             }), 400
 
         session_file = SESSION_DIR / f"{account_name}.json"
@@ -78,10 +80,19 @@ def add_account():
         return jsonify({"message": message}), 200
 
     except Unauthorized as ue:
-        return jsonify({
-            "error": "Authorization Failed",
-            "details": str(ue) + ". Please ensure cookies are correct or credentials are valid."
-        }), 401
+        error_details = str(ue)
+        if '"code":366' in error_details:
+             return jsonify({
+                "error": "Login Blocked by X.com Security",
+                "details": "This login was flagged as unusual. Please log in to X.com manually with a browser on this machine, then add the account using the new browser cookies instead of the username/password."
+            }), 401
+        if '"code":399' in error_details:
+            return jsonify({
+                "error": "Login Rejected by X.com",
+                "details": "Login failed due to incorrect credentials or a security challenge. Please log in manually in a browser, then try adding the account again using the browser's cookies."
+            }), 401
+        
+        return jsonify({ "error": "Authorization Failed", "details": error_details }), 401
     except Exception as e:
         return jsonify({"error": "An unexpected server error occurred during login.", "details": str(e)}), 500
 
@@ -90,6 +101,17 @@ def list_accounts():
     accounts = [f.stem for f in SESSION_DIR.glob("*.json")]
     return jsonify(accounts)
 
+@app.route('/proxy_image')
+def proxy_image():
+    url = request.args.get('url')
+    if not url:
+        return "Missing URL parameter", 400
+    try:
+        response = requests.get(url, stream=True, headers={'User-Agent': 'Mozilla/5.0'})
+        return Response(response.iter_content(chunk_size=1024), content_type=response.headers['Content-Type'])
+    except Exception as e:
+        return str(e), 500
+
 @app.route('/get_feed', methods=['POST'])
 def get_feed():
     data = request.get_json()
@@ -97,17 +119,14 @@ def get_feed():
 
     session_file = SESSION_DIR / f"{account_name}.json"
     if not session_file.exists():
-        return jsonify({"error": "Session not found.", "details": f"No saved session for account '{account_name}'."}), 404
+        return jsonify({"error": "Session not found."}), 404
 
     try:
         with open(session_file, 'r') as f:
             cookies = json.load(f)
         
         if not cookies:
-             return jsonify({
-                "error": "Invalid Session File",
-                "details": "The saved session file is empty. Please add the account again to create a valid session."
-            }), 400
+             return jsonify({"error": "Invalid Session File."}), 400
         
         async def get_timeline_async(loaded_cookies):
             client = Client('en-US')
@@ -118,7 +137,27 @@ def get_feed():
 
         formatted_tweets = []
         for tweet in timeline:
-            media_urls = [media.media_url_https for media in tweet.media if hasattr(media, 'media_url_https')]
+            media_list = []
+            if tweet.media:
+                for media_item in tweet.media:
+                    media_info = {'type': media_item.type}
+                    
+                    if media_item.type == 'photo':
+                        media_info['url'] = getattr(media_item, 'media_url_https', getattr(media_item, 'url', None))
+                            
+                    elif media_item.type in ['video', 'animated_gif']:
+                        variants = getattr(media_item, 'video_info', {}).get('variants', [])
+                        if variants:
+                            best_variant = max(
+                                [v for v in variants if v.get('bitrate')],
+                                key=lambda v: v.get('bitrate', 0),
+                                default=None
+                            )
+                            if best_variant:
+                                media_info['url'] = best_variant.get('url')
+                    
+                    if media_info.get('url'):
+                        media_list.append(media_info)
             
             formatted_tweets.append({
                 "id": tweet.id,
@@ -127,25 +166,21 @@ def get_feed():
                 "user": {
                     "name": tweet.user.name,
                     "screen_name": tweet.user.screen_name,
-                    "profile_image_url_https": tweet.user.profile_image_url
+                    "profile_image_url_https": tweet.user.profile_image_url,
+                    "is_verified": getattr(tweet.user, 'is_blue_verified', False)
                 },
                 "stats": {
                     "likes": tweet.favorite_count,
                     "retweets": tweet.retweet_count,
-                    # CORRECTED: Changed the attribute to match the twikit Tweet object
                     "views": tweet.view_count
                 },
-                "media_urls": media_urls
+                "media": media_list
             })
         
         return jsonify(formatted_tweets)
 
     except Unauthorized:
-        return jsonify({
-            "error": "Session Expired",
-            "details": "The saved session is no longer valid. Please add the account again to refresh it (either by logging in or providing fresh cookies)."
-        }), 401
-        
+        return jsonify({"error": "Session Expired"}), 401
     except Exception as e:
         return jsonify({"error": "Failed to fetch timeline.", "details": str(e)}), 500
 
