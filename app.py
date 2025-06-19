@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from twikit import Client
 from twikit.errors import Unauthorized
-import asyncio # Import asyncio
+import asyncio  # Import asyncio
 
 # --- Setup ---
 app = Flask(__name__)
@@ -40,17 +40,17 @@ def add_account():
     try:
         app.logger.info(f"Attempting login for account: {account_name}")
         client = Client('en-US')
-        
-        async def login_and_get_cookies(): # Define an async function for login
+
+        async def login_and_get_cookies():  # Define an async function for login
             await client.login(auth_info_1=username, auth_info_2=email, password=password)
             return client.get_cookies()
 
-        cookies = asyncio.run(login_and_get_cookies()) # Await the login
-        
+        cookies = asyncio.run(login_and_get_cookies())  # Await the login
+
         session_file = SESSION_DIR / f"{account_name}.json"
-        
+
         with open(session_file, 'w') as f:
-            json.dump(cookies, f, indent=2) # Using indent makes the file human-readable
+            json.dump(cookies, f, indent=2)  # Using indent makes the file human-readable
 
         app.logger.info(f"Successfully saved session for {account_name}")
         return jsonify({"success": True, "message": f"Successfully saved session for '{account_name}'."})
@@ -83,10 +83,8 @@ def get_feed():
         async def get_timeline_async(loaded_cookies):
             client = Client('en-US')
             client.set_cookies(loaded_cookies)
-            # Await the asynchronous get_timeline call
-            return await client.get_timeline(count=40) # Increased count for more data
+            return await client.get_timeline(count=100)
 
-        # Use asyncio.run to execute the async function
         timeline = asyncio.run(get_timeline_async(cookies))
 
         formatted_tweets = []
@@ -95,19 +93,47 @@ def get_feed():
             if hasattr(tweet, 'media') and tweet.media:
                 for media_item in tweet.media:
                     media_info = {'type': getattr(media_item, 'type', None)}
-                    url = getattr(media_item, 'media_url_https', None)
-                    if media_info['type'] in ['video', 'animated_gif'] and hasattr(media_item, 'video_info'):
+                    if media_info['type'] == 'photo':
+                        url = getattr(media_item, 'media_url', None)
+                    elif media_info['type'] in ['video', 'animated_gif'] and hasattr(media_item, 'video_info'):
                         variants = media_item.video_info.get('variants', [])
-                        if variants:
-                            best_variant = max([v for v in variants if v.get('bitrate') is not None], key=lambda v: v.get('bitrate', 0), default=None)
-                            if best_variant: url = best_variant.get('url')
-                    if url: media_info['url'] = url; media_list.append(media_info)
+                        best_variant = max([v for v in variants if v.get('bitrate') is not None], key=lambda v: v.get('bitrate', 0), default=None)
+                        url = best_variant.get('url') if best_variant else None
+                    else:
+                        url = None
+                    if url:
+                        media_info['url'] = url
+                        media_list.append(media_info)
+
             user_data = getattr(tweet, 'user', None)
-            user_info = {"name": "Unknown User", "screen_name": "unknown", "profile_image_url_https": "", "is_verified": False}
+            user_info = {
+                "name": "Unknown User",
+                "screen_name": "unknown",
+                "profile_image_url_https": "",
+                "is_verified": False
+            }
             if user_data:
-                user_info = {"name": getattr(user_data, 'name', 'Unknown User'), "screen_name": getattr(user_data, 'screen_name', 'unknown'), "profile_image_url_https": getattr(user_data, 'profile_image_url', ''), "is_verified": getattr(user_data, 'is_blue_verified', False)}
-            formatted_tweets.append({"id": tweet.id, "text": getattr(tweet, 'text', ''), "created_at": getattr(tweet, 'created_at', None), "user": user_info, "stats": {"likes": getattr(tweet, 'favorite_count', 0), "retweets": getattr(tweet, 'retweet_count', 0), "views": getattr(tweet, 'view_count', 0)}, "media": media_list})
+                user_info = {
+                    "name": getattr(user_data, 'name', 'Unknown User'),
+                    "screen_name": getattr(user_data, 'screen_name', 'unknown'),
+                    "profile_image_url_https": getattr(user_data, 'profile_image_url', ''),
+                    "is_verified": getattr(user_data, 'is_blue_verified', False)
+                }
+
+            formatted_tweets.append({
+                "id": tweet.id,
+                "text": getattr(tweet, 'text', ''),
+                "created_at": getattr(tweet, 'created_at', None),
+                "user": user_info,
+                "stats": {
+                    "likes": getattr(tweet, 'favorite_count', 0),
+                    "retweets": getattr(tweet, 'retweet_count', 0),
+                    "views": getattr(tweet, 'view_count', 0)
+                },
+                "media": media_list
+            })
         return jsonify(formatted_tweets)
+
     except Unauthorized:
         app.logger.warning(f"Session expired for {account_name}")
         return jsonify({"error": "Session has expired or is invalid."}), 401
