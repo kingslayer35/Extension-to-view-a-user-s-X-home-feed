@@ -16,7 +16,7 @@
 
 - 🔐 **Secure Account Management** - Save multiple X accounts with encrypted session storage
 - 🎨 **Native X UI** - Beautiful interface that matches X's official design language
-- ⚡ **Real-time Feed Loading** - Fetch and display feeds with 40+ tweets per load
+- ⚡ **Real-time Feed Loading** - Fetch and display feeds with 1000+ tweets per load
 - 🖼️ **Rich Media Support** - Display images, videos, and GIFs seamlessly
 - 📱 **Responsive Design** - Optimized for all screen sizes
 - 🌙 **Dark Theme** - Matches X's dark mode aesthetic
