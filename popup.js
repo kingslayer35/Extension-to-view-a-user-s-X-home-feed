@@ -30,15 +30,12 @@ async function loadSavedAccounts() {
             avatar.className = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold text-white ${color}`;
             avatar.textContent = name.charAt(0).toUpperCase();
 
-            // --- KEY CHANGE: Text size reduced from text-lg to text-base for a more balanced look ---
             const nameSpan = document.createElement('span');
             nameSpan.className = 'ml-3 flex-grow text-base font-bold';
             nameSpan.textContent = name;
 
-            // --- KEY CHANGE: Button text updated for clarity ---
             const viewButton = document.createElement('button');
             viewButton.textContent = 'View Feed';
-            // Note: The font size on the button text was also increased as requested in the previous turn.
             viewButton.className = 'flex-shrink-0 rounded-full bg-x-text-primary px-4 py-1.5 text-sm font-bold text-x-bg transition-colors hover:bg-opacity-90';
             viewButton.onclick = () => loadFeedFor(name);
             
@@ -59,19 +56,24 @@ async function loadSavedAccounts() {
     }
 }
 
-// --- The rest of the file is unchanged, but included for completeness ---
 async function loadFeedFor(accountName) {
     const statusDiv = document.getElementById(`status-${accountName}`);
     updateIndividualStatus(statusDiv, 'Loading feed...', 'loading');
     try {
-        const response = await fetch('http://127.0.0.1:5000/get_feed', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account_name: accountName }) });
+        const response = await fetch('http://127.0.0.1:5000/get_feed', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_name: accountName })
+        });
         const result = await response.json();
         if (!response.ok) throw result;
         updateIndividualStatus(statusDiv, 'Feed loaded. Injecting...', 'success');
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         chrome.scripting.executeScript({ target: { tabId: tab.id }, func: displayFeedInPage, args: [result, accountName] });
     } catch (error) {
-        const errorMessage = (error && error.error) ? `<b>Error:</b> ${error.error}<br><b>Details:</b> ${error.details || 'No details.'}` : `<b>Network Error:</b> Could not load feed.`;
+        const errorMessage = (error && error.error)
+            ? `<b>Error:</b> ${error.error}<br><b>Details:</b> ${error.details || 'No details.'}`
+            : `<b>Network Error:</b> Could not load feed.`;
         updateIndividualStatus(statusDiv, errorMessage, 'error');
     }
 }
@@ -101,23 +103,41 @@ function updateLoginStatus(message, type) {
 async function handleAddAccount(event) {
     event.preventDefault();
     updateLoginStatus('Logging in...', 'loading');
-    const formData = { account_name: document.getElementById('account_name').value, username: document.getElementById('username').value, email: document.getElementById('email').value, password: document.getElementById('password').value };
-    if (!formData.account_name.trim() || !formData.password.trim() || (!formData.username.trim() && !formData.email.trim())) { updateLoginStatus('<b>Input Error:</b> All fields are required.', 'error'); return; }
+    const formData = {
+        account_name: document.getElementById('account_name').value,
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+    };
+    if (!formData.account_name.trim() || !formData.password.trim() || (!formData.username.trim() && !formData.email.trim())) {
+        updateLoginStatus('<b>Input Error:</b> All fields are required.', 'error');
+        return;
+    }
     try {
-        const response = await fetch('http://127.0.0.1:5000/add_account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+        const response = await fetch('http://127.0.0.1:5000/add_account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
         const result = await response.json();
         if (!response.ok) throw result;
         updateLoginStatus(result.message, 'success');
         document.getElementById('add-account-form').reset();
         loadSavedAccounts();
     } catch (error) {
-        const errorMessage = (error && error.error) ? `<b>Server Error:</b> ${error.error}` : `<b>Network Error:</b> Could not reach server.`;
+        const errorMessage = (error && error.error)
+            ? `<b>Server Error:</b> ${error.error}`
+            : `<b>Network Error:</b> Could not reach server.`;
         updateLoginStatus(errorMessage, 'error');
     }
 }
+
 function displayFeedInPage(tweets, accountName) {
     const primaryColumn = document.querySelector('div[data-testid="primaryColumn"]');
-    if (!primaryColumn) { alert('Could not find the primary column to inject content.'); return; }
+    if (!primaryColumn) {
+        alert('Could not find the primary column to inject content.');
+        return;
+    }
 
     const oldContainer = document.getElementById('custom-feed-container');
     if (oldContainer) oldContainer.remove();
@@ -130,7 +150,9 @@ function displayFeedInPage(tweets, accountName) {
     function linkify(text) {
         const filteredText = text.replace(/https:\/\/t\.co\/[a-zA-Z0-9]+/g, '');
         const urlPattern = /(https?:\/\/[^\s]+)/g;
-        return filteredText.replace(urlPattern, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #1d9bf0;">${url}</a>`);
+        return filteredText.replace(urlPattern, (url) =>
+            `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #1d9bf0;">${url}</a>`
+        );
     }
 
     function formatStats(num) {
@@ -148,9 +170,8 @@ function displayFeedInPage(tweets, accountName) {
         if (tweet.media && tweet.media.length > 0) {
             const mediaContainerStyle = 'width: 100%; max-height: 500px; object-fit: cover; border-radius: 16px; margin-top: 12px; border: 1px solid #38444d;';
             tweet.media.forEach(mediaItem => {
-                const proxiedUrl = `http://127.0.0.1:5000/proxy_image?url=${encodeURIComponent(mediaItem.url)}`;
                 if (mediaItem.type === 'photo') {
-                    mediaHTML += `<img src="${proxiedUrl}" style="${mediaContainerStyle}">`;
+                    mediaHTML += `<img src="${mediaItem.url}" style="${mediaContainerStyle}">`;
                 } else if (mediaItem.type === 'video') {
                     mediaHTML += `<video src="${mediaItem.url}" controls style="${mediaContainerStyle}"></video>`;
                 } else if (mediaItem.type === 'animated_gif') {
@@ -158,10 +179,10 @@ function displayFeedInPage(tweets, accountName) {
                 }
             });
         }
-        
+
         const processedText = linkify(tweet.text);
-        const proxiedPfpUrl = `http://127.0.0.1:5000/proxy_image?url=${encodeURIComponent(tweet.user.profile_image_url_https)}`;
-        
+        const proxiedPfpUrl = tweet.user.profile_image_url_https;
+
         feedHTML += `
             <article style="border-bottom: 1px solid #38444d; padding: 1rem; display: flex; flex-direction: column;">
                 <div style="display: flex; align-items: flex-start;">
@@ -187,7 +208,7 @@ function displayFeedInPage(tweets, accountName) {
             </article>
         `;
     });
-    
+
     feedContainer.innerHTML = feedHTML;
     primaryColumn.prepend(feedContainer);
 }
