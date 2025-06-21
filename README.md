@@ -12,29 +12,38 @@
 
 </div>
 
+---
+
 ## ✨ Features
 
-- 🔐 **Secure Account Management** - Save multiple X accounts with encrypted session storage
-- 🎨 **Native X UI** - Beautiful interface that matches X's official design language
-- ⚡ **Real-time Feed Loading** - Fetch and display feeds with 1000+ tweets per load
-- 🖼️ **Rich Media Support** - Display images, videos, and GIFs seamlessly
-- 📱 **Responsive Design** - Optimized for all screen sizes
-- 🌙 **Dark Theme** - Matches X's dark mode aesthetic
-- 🔄 **Session Persistence** - Automatic login state management
+- 🔐 **Secure Account Management** – Save multiple X accounts with Firebase-encrypted session storage
+- 🎨 **Native X UI** – Beautiful interface that matches X's official design language
+- ⚡ **Real-time Feed Loading** – Fetch and display feeds with 1000+ tweets per load
+- 🖼️ **Rich Media Support** – Display images, videos, and GIFs seamlessly
+- 📱 **Responsive Design** – Optimized for all screen sizes
+- 🌙 **Dark Theme** – Matches X's dark mode aesthetic
+- 🔄 **Session Persistence** – Automatic login state management using Firebase
+
+---
 
 ## 🛠️ Tech Stack
 
 - **Backend**: Python Flask with async support
 - **Frontend**: Vanilla JavaScript + Tailwind CSS
 - **X API**: Twikit library for X interactions
-- **Storage**: JSON-based session management
+- **Storage**: Firebase Realtime Database for cloud-based session management
 - **UI Framework**: Chrome Extension Manifest V3
+
+---
 
 ## 📋 Prerequisites
 
 - Python 3.8 or higher
 - Chrome browser (latest version recommended)
+- Firebase project with Realtime Database enabled
 - Active X (Twitter) account(s)
+
+---
 
 ## 🚀 Quick Start
 
@@ -89,15 +98,18 @@ The server will start at `http://127.0.0.1:5000`
 
 ```
 x-feed-viewer/
-├── app.py              # Flask backend server
-├── popup.html          # Extension popup interface
-├── popup.js            # Frontend JavaScript logic
-├── input.css           # Tailwind CSS source
-├── output.css          # Compiled CSS styles
-├── tailwind.config.js  # Tailwind configuration
-├── requirements.txt    # Python dependencies
-├── manifest.json       # Chrome extension manifest
-└── sessions/          # Account session storage (auto-created)
+├── app.py                # Flask backend server with Firebase integration
+├── serviceAccountKey.json # Firebase Admin SDK credentials (do NOT commit)
+├── popup.html            # Extension popup UI
+├── popup.js              # Frontend logic
+├── input.css             # Tailwind source styles
+├── output.css            # Compiled Tailwind CSS
+├── manifest.json         # Chrome extension config
+├── tailwind.config.js    # Tailwind customization
+├── requirements.txt      # Python dependencies
+├── postcss.config.js     # Tailwind/PostCSS pipeline
+└── README.md             # Project documentation
+
 ```
 
 ## 🔧 Configuration
@@ -127,7 +139,7 @@ colors: {
 
 ## 🛡️ Security Features
 
-- **Local Session Storage**: Account sessions are stored locally as JSON files
+- **Cloud Session Storage** – Sessions stored in Firebase using service account keys
 - **No Credential Storage**: Passwords are only used for initial authentication
 - **CORS Protection**: Configured for secure cross-origin requests
 - **Error Handling**: Comprehensive error handling for failed requests
