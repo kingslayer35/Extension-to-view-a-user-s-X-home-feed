@@ -7,24 +7,35 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from twikit import Client
 from twikit.errors import Unauthorized
-import asyncio  # Import asyncio
+import asyncio
+from firebase_admin import credentials, firestore
+import firebase_admin
 
 # --- Setup ---
 app = Flask(__name__)
 CORS(app)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-SESSION_DIR = Path('sessions')
-SESSION_DIR.mkdir(exist_ok=True)
+# --- Firebase Initialization ---
+try:
+    cred = credentials.Certificate('serviceAccountKey.json')
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    app.logger.info("Firebase initialized successfully.")
+except Exception as e:
+    app.logger.error(f"Error initializing Firebase: {traceback.format_exc()}")
+    raise SystemExit("Firebase initialization failed.")
 
 @app.route('/get-accounts', methods=['GET'])
 def get_accounts():
     try:
-        accounts = [f.stem for f in SESSION_DIR.glob('*.json')]
+        # Get all document IDs from the 'sessions' collection in Firestore
+        docs = db.collection('sessions').stream()
+        accounts = [doc.id for doc in docs]
         return jsonify(accounts)
     except Exception as e:
-        app.logger.error(f"Error reading session directory: {traceback.format_exc()}")
-        return jsonify({"error": "Could not read session directory.", "details": str(e)}), 500
+        app.logger.error(f"Error retrieving accounts from Firestore: {traceback.format_exc()}")
+        return jsonify({"error": "Could not retrieve accounts from database.", "details": str(e)}), 500
 
 @app.route('/add_account', methods=['POST'])
 def add_account():
@@ -41,18 +52,17 @@ def add_account():
         app.logger.info(f"Attempting login for account: {account_name}")
         client = Client('en-US')
 
-        async def login_and_get_cookies():  # Define an async function for login
+        async def login_and_get_cookies():
             await client.login(auth_info_1=username, auth_info_2=email, password=password)
             return client.get_cookies()
 
-        cookies = asyncio.run(login_and_get_cookies())  # Await the login
+        cookies = asyncio.run(login_and_get_cookies())
 
-        session_file = SESSION_DIR / f"{account_name}.json"
+        # Save cookies to Firestore
+        doc_ref = db.collection('sessions').document(account_name)
+        doc_ref.set(cookies)
 
-        with open(session_file, 'w') as f:
-            json.dump(cookies, f, indent=2)  # Using indent makes the file human-readable
-
-        app.logger.info(f"Successfully saved session for {account_name}")
+        app.logger.info(f"Successfully saved session for {account_name} in Firestore.")
         return jsonify({"success": True, "message": f"Successfully saved session for '{account_name}'."})
 
     except Unauthorized:
@@ -60,7 +70,7 @@ def add_account():
         return jsonify({"error": "Login failed. Please check your credentials."}), 401
     except Exception as e:
         app.logger.error(f"An unexpected error occurred during login for {account_name}:\n{traceback.format_exc()}")
-        return jsonify({"error": "An unexpected error occurred during login."}), 500
+        return jsonify({"error": "An unexpected error occurred during login.", "details": str(e)}), 500
 
 @app.route('/get_feed', methods=['POST'])
 def get_feed():
@@ -69,16 +79,18 @@ def get_feed():
     if not account_name:
         return jsonify({"error": "Account name not provided."}), 400
 
-    session_file = SESSION_DIR / f"{account_name}.json"
-    if not session_file.exists():
-        return jsonify({"error": f"Session for '{account_name}' not found."}), 404
-
     try:
-        with open(session_file, 'r') as f:
-            cookies = json.load(f)
+        # Retrieve cookies from Firestore
+        doc_ref = db.collection('sessions').document(account_name)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            return jsonify({"error": f"Session for '{account_name}' not found in database."}), 404
+
+        cookies = doc.to_dict()
 
         if not cookies:
-            return jsonify({"error": "Session file is empty or invalid."}), 400
+            return jsonify({"error": "Session data is empty or invalid in database."}), 400
 
         async def get_timeline_async(loaded_cookies):
             client = Client('en-US')
@@ -135,8 +147,9 @@ def get_feed():
         return jsonify(formatted_tweets)
 
     except Unauthorized:
-        app.logger.warning(f"Session expired for {account_name}")
-        return jsonify({"error": "Session has expired or is invalid."}), 401
+        app.logger.warning(f"Session expired or invalid for {account_name}. Deleting from Firestore.")
+        db.collection('sessions').document(account_name).delete()
+        return jsonify({"error": "Session has expired or is invalid. Please re-add the account."}), 401
     except Exception as e:
         app.logger.error(f"Error fetching feed for {account_name}:\n{traceback.format_exc()}")
         return jsonify({"error": "An unexpected error occurred while processing the feed.", "details": str(e)}), 500
