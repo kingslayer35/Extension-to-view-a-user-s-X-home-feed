@@ -95,7 +95,8 @@ The server will start at `http://127.0.0.1:5000`
 4. Enjoy your custom feed with enhanced formatting!
 
 ### Samples of Extension and Custom Feed
-![Demo Screenshot](Screenshot 2025-06-22 235430.png)
+![Demo Screenshot](<img src="Screenshot 2025-06-22 235530.png" width="400"/>
+)
 ![Demo Screenshot](Screenshot 2025-06-22 235530.png)
 ![Demo Screenshot](Screenshot 2025-06-22 235615.png)
 
