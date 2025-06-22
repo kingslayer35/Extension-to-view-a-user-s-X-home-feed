@@ -96,8 +96,12 @@ The server will start at `http://127.0.0.1:5000`
 
 ### 📸 Extension and Feed Demo
 
-<img src="Screenshot%202025-06-22%20235530.png" width="400"/>
-<img src="Screenshot%202025-06-22%20235615.png" width="400"/>
+<div align="center">
+  <img src="Screenshot%202025-06-22%20235530.png" width="30%" style="margin: 0 1%;">
+  <img src="Screenshot%202025-06-22%20235615.png" width="30%" style="margin: 0 1%;">
+  <img src="Screenshot%202025-06-22%20235645.png" width="30%" style="margin: 0 1%;">
+</div>
+
 
 ## 📁 Project Structure
 
