@@ -94,6 +94,11 @@ The server will start at `http://127.0.0.1:5000`
 3. The feed will be injected into the current X tab
 4. Enjoy your custom feed with enhanced formatting!
 
+### Samples of Extension and Custom Feed
+![Demo Screenshot](Screenshot 2025-06-22 235430.png)
+![Demo Screenshot](Screenshot 2025-06-22 235530.png)
+![Demo Screenshot](Screenshot 2025-06-22 235615.png)
+
 ## 📁 Project Structure
 
 ```
@@ -167,6 +172,10 @@ colors: {
 **"Login failed"**
 - Verify your X credentials are correct
 - Check if 2FA is enabled (may require app-specific password)
+
+**Extension shows "Logging in..." for a long time**
+- Check vs code terminal, it might ask you to paste security code sent by X for verification.
+- This happens very rarely in case of multiple logins only using the same account.
 
 ### Debug Mode
 
