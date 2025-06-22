@@ -94,11 +94,10 @@ The server will start at `http://127.0.0.1:5000`
 3. The feed will be injected into the current X tab
 4. Enjoy your custom feed with enhanced formatting!
 
-### Samples of Extension and Custom Feed
-![Demo Screenshot](<img src="Screenshot 2025-06-22 235530.png" width="400"/>
-)
-![Demo Screenshot](Screenshot 2025-06-22 235530.png)
-![Demo Screenshot](Screenshot 2025-06-22 235615.png)
+### 📸 Extension and Feed Demo
+
+<img src="Screenshot%202025-06-22%20235530.png" width="400"/>
+<img src="Screenshot%202025-06-22%20235615.png" width="400"/>
 
 ## 📁 Project Structure
 
